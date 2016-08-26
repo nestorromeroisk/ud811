@@ -15,6 +15,33 @@
     daysOfWeek: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   };
 
+  var injectedForecast = {
+    key: 'newyork',
+    label: 'New York, NY',
+    currently: {
+      time: 1453489481,
+      summary: 'Clear',
+      icon: 'partly-cloudy-day',
+      temperature: 52.74,
+      apparentTemperature: 74.34,
+      precipProbability: 0.20,
+      humidity: 0.77,
+      windBearing: 125,
+      windSpeed: 1.52
+    },
+    daily: {
+      data: [
+        {icon: 'clear-day', temperatureMax: 55, temperatureMin: 34},
+        {icon: 'rain', temperatureMax: 55, temperatureMin: 34},
+        {icon: 'snow', temperatureMax: 55, temperatureMin: 34},
+        {icon: 'sleet', temperatureMax: 55, temperatureMin: 34},
+        {icon: 'fog', temperatureMax: 55, temperatureMin: 34},
+        {icon: 'wind', temperatureMax: 55, temperatureMin: 34},
+        {icon: 'partly-cloudy-day', temperatureMax: 55, temperatureMin: 34}
+      ]
+    }
+  };
+
 
   /*****************************************************************************
    *
@@ -42,6 +69,7 @@
     app.getForecast(key, label);
     app.selectedCities.push({key: key, label: label});
     app.toggleAddDialog(false);
+
   });
 
   /* Event listener for cancel button in add city dialog */
@@ -134,6 +162,12 @@
           var response = JSON.parse(request.response);
           response.key = key;
           response.label = label;
+
+          //Local Storage logic
+          //Stores any new city requested by the user
+          localforage.setItem(key, response, function(err, value){
+            //console.log( "Storing: " + key + " - " + value);
+          });
           app.updateForecastCard(response);
         }
       }
@@ -149,5 +183,23 @@
       app.getForecast(key);
     });
   };
+
+  //Local Storage check
+  //Checks if user has any cities stored locally and updates UI
+  localforage.keys(function(err,keys) {
+    //console.log(keys);
+    var stored = false;
+    keys.forEach(function(key) {
+      stored = true;
+      localforage.getItem(key, function(err,data){
+        app.updateForecastCard(data);
+      })
+    })
+
+    if(!stored){
+      //localforage.clear();
+      app.updateForecastCard(injectedForecast);  
+    }
+  });
 
 })();
