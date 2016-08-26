@@ -68,6 +68,7 @@
     var label = selected.textContent;
     app.getForecast(key, label);
     app.selectedCities.push({key: key, label: label});
+    app.saveSelectedCities();
     app.toggleAddDialog(false);
 
   });
@@ -162,12 +163,6 @@
           var response = JSON.parse(request.response);
           response.key = key;
           response.label = label;
-
-          //Local Storage logic
-          //Stores any new city requested by the user
-          localforage.setItem(key, response, function(err, value){
-            //console.log( "Storing: " + key + " - " + value);
-          });
           app.updateForecastCard(response);
         }
       }
@@ -184,22 +179,26 @@
     });
   };
 
-  //Local Storage check
-  //Checks if user has any cities stored locally and updates UI
-  localforage.keys(function(err,keys) {
-    //console.log(keys);
-    var stored = false;
-    keys.forEach(function(key) {
-      stored = true;
-      localforage.getItem(key, function(err,data){
-        app.updateForecastCard(data);
-      })
-    })
+  //Local Storage for Selected Cities
+  app.saveSelectedCities = function(){
+    window.localforage.setItem('selectedCities', app.selectedCities);
+  };
 
-    if(!stored){
-      //localforage.clear();
-      app.updateForecastCard(injectedForecast);  
-    }
+  document.addEventListener('DOMContentLoaded', function() {
+    window.localforage.getItem('selectedCities', function( err, cityList) {
+      if(cityList) {
+        app.selectedCities = cityList;
+        app.selectedCities.forEach(function(city) {
+          app.getForecast(city.key, city.label);
+        });
+      } else {
+        app.updateForecastCard(injectedForecast);
+        app.selectedCities = [
+          {key: injectedForecast.key, label: injectedForecast.label}
+        ];
+        app.saveSelectedCities();
+      } 
+    });   
   });
 
 })();
